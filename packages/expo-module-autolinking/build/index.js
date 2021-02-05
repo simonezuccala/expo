@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveModulesAsync = exports.verifySearchResults = exports.mergeLinkingOptionsAsync = exports.findModulesAsync = exports.findDefaultPathsAsync = exports.findPackageJsonPathAsync = exports.resolveSearchPathsAsync = void 0;
+exports.generatePackageListAsync = exports.resolveModulesAsync = exports.verifySearchResults = exports.mergeLinkingOptionsAsync = exports.findModulesAsync = exports.findDefaultPathsAsync = exports.findPackageJsonPathAsync = exports.resolveSearchPathsAsync = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const fast_glob_1 = __importDefault(require("fast-glob"));
 const find_up_1 = __importDefault(require("find-up"));
@@ -50,6 +50,29 @@ async function findModulesAsync(platform, providedOptions) {
     for (const searchPath of config.searchPaths) {
         const paths = await fast_glob_1.default('**/unimodule.json', {
             cwd: searchPath,
+            ignore: [
+                '**/__tests__',
+                '**/.expo',
+                '**/android',
+                '**/apple',
+                '**/bin',
+                '**/build',
+                '**/dist',
+                '**/docs',
+                '**/ios',
+                '**/jest',
+                '**/js',
+                '**/lib',
+                '**/macos',
+                '**/plugin',
+                '**/scripts',
+                '**/src',
+                '**/test',
+                '**/types',
+                '**/typescript',
+                '**/typings',
+                '**/windows',
+            ],
         });
         for (const packageConfigPath of paths) {
             const packagePath = fs_1.default.realpathSync(path_1.default.join(searchPath, path_1.default.dirname(packageConfigPath)));
@@ -132,8 +155,13 @@ exports.verifySearchResults = verifySearchResults;
  * Resolves search results to a list of platform-specific configuration.
  */
 async function resolveModulesAsync(platform, searchResults) {
-    const platformLinking = require(`./resolvers/${platform}`);
+    const platformLinking = require(`./platforms/${platform}`);
     return (await Promise.all(Object.entries(searchResults).map(([packageName, revision]) => platformLinking.resolveModuleAsync(packageName, revision)))).filter(Boolean);
 }
 exports.resolveModulesAsync = resolveModulesAsync;
+async function generatePackageListAsync(modules, platform, targetPath, namespace) {
+    const platformLinking = require(`./platforms/${platform}`);
+    await platformLinking.generatePackageListAsync(modules, targetPath, namespace);
+}
+exports.generatePackageListAsync = generatePackageListAsync;
 //# sourceMappingURL=index.js.map

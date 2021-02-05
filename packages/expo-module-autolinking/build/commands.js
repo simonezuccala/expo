@@ -49,6 +49,12 @@ registerSearchingCommand('verify', results => {
         logger_1.default.success('✅ Everything is fine!');
     }
 });
+registerSearchingCommand('generate-package-list', async (results, command) => {
+    const modules = await _1.resolveModulesAsync(command.platform, results);
+    _1.generatePackageListAsync(modules, command.platform, command.target, command.namespace);
+})
+    .option('-t, --target <path>', 'Path to the target file, where the package list should be written to.')
+    .option('-n, --namespace <namespace>', 'Java package name under which the package list should be placed.');
 commander_1.default
     .version(require('expo-module-autolinking/package.json').version)
     .description('CLI command that searches for Expo modules to autolink them.')

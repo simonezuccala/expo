@@ -1,0 +1,174 @@
+import groovy.json.JsonSlurper
+import java.nio.file.Paths
+
+class ExpoModule {
+  String projectName
+  String sourceDir
+  String version
+
+  ExpoModule(Object data) {
+    this.projectName = data.projectName
+    this.sourceDir = data.sourceDir
+    this.version = data.version
+  }
+}
+
+class ExpoAutolinkingManager {
+  private File projectDir
+  private Map options
+  private Object cachedResolvingResults
+
+  static String generatedPackageListNamespace = 'org.unimodules.adapters.react'
+  static String generatedPackageListFilename = 'ExpoModulesPackageList.java'
+  static String generatedFilesSrcDir = 'generated/expo/src/main/java'
+
+  ExpoAutolinkingManager(File projectDir, Map options = [:]) {
+    this.projectDir = projectDir
+    this.options = options
+  }
+
+  Object resolve() {
+    if (cachedResolvingResults) {
+      return cachedResolvingResults
+    }
+    String[] args = convertOptionsToCommandArgs('json', this.options)
+    String output = exec(args)
+    Object json = new JsonSlurper().parseText(output)
+    cachedResolvingResults = json
+    return json
+  }
+
+  ExpoModule[] getModules() {
+    Object json = resolve()
+    return json.modules.collect { new ExpoModule(it) }
+  }
+
+  void generatePackageList(Project project) {
+    String[] args = convertOptionsToCommandArgs('generate-package-list', this.options)
+
+    // Construct absolute path to generated package list.
+    def generatedFilePath = Paths.get(
+      project.buildDir.toString(),
+      generatedFilesSrcDir,
+      generatedPackageListNamespace.replace('.', '/'),
+      generatedPackageListFilename
+    )
+
+    args += [
+      '--namespace',
+      generatedPackageListNamespace,
+      '--target',
+      generatedFilePath.toString()
+    ]
+    exec(args)
+  }
+
+  /**
+   * Runs a specified command using Runtime exec().
+   * Throws when the command result is empty.
+   */
+  String exec(String[] commandArgs) {
+    try {
+      def output = ""
+      def cmdProcess = Runtime.getRuntime().exec(commandArgs, null, projectDir)
+      def bufferedReader = new BufferedReader(new InputStreamReader(cmdProcess.getInputStream()))
+      def buff = ""
+      def readBuffer = new StringBuffer()
+
+      while ((buff = bufferedReader.readLine()) != null) {
+        readBuffer.append(buff)
+      }
+
+      output = readBuffer.toString()
+
+      if (!output) {
+        def bufferedErrorReader = new BufferedReader(new InputStreamReader(cmdProcess.getErrorStream()))
+        def errBuff = ""
+        def readErrorBuffer = new StringBuffer()
+
+        while ((errBuff = bufferedErrorReader.readLine()) != null) {
+          readErrorBuffer.append(errBuff)
+        }
+      }
+      return output
+    } catch (Exception exception) {
+      throw exception
+    }
+  }
+
+  static private String[] convertOptionsToCommandArgs(String command, Map options) {
+    String[] args = [
+      'npx',
+      'expo-module-autolinking',
+      command,
+      '--platform',
+      'android'
+    ]
+
+    if (options.searchPaths) {
+      args.addAll(options.searchPaths)
+    }
+
+    if (options.ignorePaths) {
+      args += '--ignore-paths'
+      args += options.ignorePaths
+    }
+
+    if (options.exclude) {
+      args += '--exclude'
+      args += options.exclude
+    }
+
+    return args
+  }
+}
+
+// Here we split the implementation, depending on Gradle context.
+// `rootProject` is a `ProjectDescriptor` if this file is imported in `settings.gradle` context,
+// otherwise we can assume it is imported in `build.gradle`.
+if (rootProject instanceof ProjectDescriptor) {
+  // Method to be used in `settings.gradle`. Options passed here will have an effect in `build.gradle` context as well,
+  // i.e. adding the dependencies and generating the package list.
+  ext.useExpoModules = { Map options = [:] ->
+    ExpoAutolinkingManager manager = new ExpoAutolinkingManager(rootProject.projectDir, options)
+    ExpoModule[] modules = manager.getModules()
+
+    for (module in modules) {
+      include(":${module.projectName}")
+      project(":${module.projectName}").projectDir = new File(module.sourceDir)
+    }
+
+    // Save the manager in the shared context, so that we can later use it in `build.gradle`.
+    gradle.ext.expoAutolinkingManager = manager
+  }
+} else {
+  def addDependencies = { Project project, Closure<Object> projectNameResolver ->
+    if (!gradle.ext.has('expoAutolinkingManager')) {
+      // Maybe should only log an error and don't throw?
+      throw new GradleException('Autolinking is not set up in `settings.gradle`.')
+    }
+
+    def modules = gradle.ext.expoAutolinkingManager.getModules()
+
+    for (module in modules) {
+      Object dependencyName = projectNameResolver(module)
+      project.dependencies.add('api', dependencyName)
+    }
+  }
+
+  // Adding dependencies
+  ext.addExpoModulesDependencies = { Project project ->
+    addDependencies(project) { module -> rootProject.project(":${module.projectName}") }
+  }
+
+  ext.addExpoModulesMavenDependencies = { Project project ->
+    addDependencies(project) { module -> "${module.androidGroup}:${module.projectName}:${module.version}" }
+  }
+
+  // Generating the package list
+  ext.generatedFilesSrcDir = ExpoAutolinkingManager.generatedFilesSrcDir
+
+  ext.generateExpoModulesPackageList = {
+    gradle.ext.expoAutolinkingManager.generatePackageList(project)
+  }
+}

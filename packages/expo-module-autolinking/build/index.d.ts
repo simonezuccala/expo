@@ -33,3 +33,4 @@ export declare function verifySearchResults(searchResults: SearchResults, logger
  * Resolves search results to a list of platform-specific configuration.
  */
 export declare function resolveModulesAsync(platform: string, searchResults: SearchResults): Promise<ModuleDescriptor[]>;
+export declare function generatePackageListAsync(modules: ModuleDescriptor[], platform: string, targetPath: string, namespace: string): Promise<void>;

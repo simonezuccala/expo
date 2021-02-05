@@ -60,6 +60,29 @@ export async function findModulesAsync(
   for (const searchPath of config.searchPaths) {
     const paths = await glob('**/unimodule.json', {
       cwd: searchPath,
+      ignore: [
+        '**/__tests__',
+        '**/.expo',
+        '**/android',
+        '**/apple',
+        '**/bin',
+        '**/build',
+        '**/dist',
+        '**/docs',
+        '**/ios',
+        '**/jest',
+        '**/js',
+        '**/lib',
+        '**/macos',
+        '**/plugin',
+        '**/scripts',
+        '**/src',
+        '**/test',
+        '**/types',
+        '**/typescript',
+        '**/typings',
+        '**/windows',
+      ],
     });
 
     for (const packageConfigPath of paths) {
@@ -163,7 +186,7 @@ export async function resolveModulesAsync(
   platform: string,
   searchResults: SearchResults
 ): Promise<ModuleDescriptor[]> {
-  const platformLinking = require(`./resolvers/${platform}`);
+  const platformLinking = require(`./platforms/${platform}`);
 
   return (
     await Promise.all(
@@ -172,4 +195,14 @@ export async function resolveModulesAsync(
       )
     )
   ).filter(Boolean);
+}
+
+export async function generatePackageListAsync(
+  modules: ModuleDescriptor[],
+  platform: string,
+  targetPath: string,
+  namespace: string
+) {
+  const platformLinking = require(`./platforms/${platform}`);
+  await platformLinking.generatePackageListAsync(modules, targetPath, namespace);
 }

@@ -1,13 +1,20 @@
-apply from: '../node_modules/react-native-unimodules/gradle.groovy'
-
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle");
 applyNativeModulesSettingsGradle(settings)
 
 include(":unimodules-test-core")
 project(":unimodules-test-core").projectDir = new File("../../../packages/unimodules-test-core/android")
 
-// Include unimodules.
-includeUnimodulesProjects()
+// Include Expo modules
+apply from: '../../../node_modules/expo-module-autolinking/autolinking.gradle'
+useExpoModules([
+    exclude: ["expo-branch",
+              "expo-payments-stripe",
+              "expo-ads-facebook",
+              "expo-ads-admob",
+              "expo-apple-authentication",
+              "expo-updates",
+              "expo-module-template"]
+])
 
 rootProject.name = 'BareExpo'
 

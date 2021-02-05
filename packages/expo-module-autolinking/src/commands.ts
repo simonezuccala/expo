@@ -1,8 +1,12 @@
-import chalk from 'chalk';
 import commander, { Command } from 'commander';
 import process from 'process';
 
-import { findModulesAsync, resolveModulesAsync, verifySearchResults } from '.';
+import {
+  findModulesAsync,
+  resolveModulesAsync,
+  verifySearchResults,
+  generatePackageListAsync,
+} from '.';
 import logger, { NonTTYLogger } from './logger';
 import { SearchOptions, SearchResults } from './types';
 
@@ -37,6 +41,19 @@ registerSearchingCommand('verify', results => {
     logger.success('✅ Everything is fine!');
   }
 });
+
+registerSearchingCommand('generate-package-list', async (results, command) => {
+  const modules = await resolveModulesAsync(command.platform, results);
+  generatePackageListAsync(modules, command.platform, command.target, command.namespace);
+})
+  .option(
+    '-t, --target <path>',
+    'Path to the target file, where the package list should be written to.'
+  )
+  .option(
+    '-n, --namespace <namespace>',
+    'Java package name under which the package list should be placed.'
+  );
 
 commander
   .version(require('expo-module-autolinking/package.json').version)

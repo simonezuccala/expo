@@ -20,6 +20,8 @@ apply plugin: 'kotlin-android'
 group = 'org.unimodules'
 version = '6.2.1'
 
+//
+apply from: "../../../expo-module-autolinking/autolinking.gradle"
 
 // Simple helper that allows the root project to override versions declared by this library.
 def safeExtGet(prop, fallback) {
@@ -51,6 +53,16 @@ uploadArchives {
   }
 }
 
+// A task generating a package list of expo modules.
+task generateExpoModulesPackageList {
+  doLast {
+    generateExpoModulesPackageList()
+  }
+}
+
+// Run that task during prebuilding phase.
+preBuild.dependsOn generateExpoModulesPackageList
+
 android {
   compileSdkVersion safeExtGet("compileSdkVersion", 30)
 
@@ -62,6 +74,13 @@ android {
   }
   lintOptions {
     abortOnError false
+  }
+  sourceSets {
+    main {
+      java {
+        srcDirs += new File(project.buildDir, generatedFilesSrcDir)
+      }
+    }
   }
 }
 
@@ -78,5 +97,10 @@ dependencies {
   implementation 'com.facebook.react:react-native:+'
 
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${safeExtGet('kotlinVersion', '1.4.21')}"
-
 }
+
+// Link expo modules as dependencies of the adapter. It uses `api` configuration so they all will be visible for the app as well.
+// A collection of the dependencies depends on the options passed to `useExpoModules` in your project's `settings.gradle`.
+addExpoModulesDependencies(project)
+
+println(dependencies)
