@@ -25,7 +25,7 @@ import expo.modules.updates.loader.RemoteLoader;
 import expo.modules.updates.manifest.ManifestMetadata;
 
 // this unused import must stay because of versioning
-import expo.modules.updates.UpdatesConfiguration;
+
 
 public class UpdatesModule extends ExportedModule {
   private static final String NAME = "ExpoUpdates";
@@ -196,6 +196,10 @@ public class UpdatesModule extends ExportedModule {
               public void onFailure(Exception e) {
                 databaseHolder.releaseDatabase();
                 promise.reject("ERR_UPDATES_FETCH", "Failed to download new update", e);
+              }
+
+              @Override
+              public void onAssetLoaded(AssetEntity asset, int assetsLoaded, int totalAssets) {
               }
 
               @Override

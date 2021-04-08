@@ -19,6 +19,7 @@ import javax.inject.Inject;
 
 import androidx.annotation.Nullable;
 import expo.modules.updates.db.DatabaseHolder;
+import expo.modules.updates.db.entity.AssetEntity;
 import expo.modules.updates.db.entity.UpdateEntity;
 import expo.modules.updates.loader.FileDownloader;
 import expo.modules.updates.loader.RemoteLoader;
@@ -128,6 +129,10 @@ public class UpdatesModule extends ReactContextBaseJavaModule {
             public void onFailure(Exception e) {
               mDatabaseHolder.releaseDatabase();
               sendErrorAndReject("E_FETCH_BUNDLE_FAILED", "Failed to fetch new update", e, promise);
+            }
+
+            @Override
+            public void onAssetLoaded(AssetEntity asset, int assetsLoaded, int totalAssets) {
             }
 
             @Override

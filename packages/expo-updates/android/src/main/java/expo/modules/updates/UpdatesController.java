@@ -54,6 +54,12 @@ public class UpdatesController {
   private SelectionPolicy mSelectionPolicy;
   private FileDownloader mFileDownloader;
 
+  /**
+   * Separate SelectionPolicy used only for launches; allows other modules (e.g. the dev client)
+   * to control which update is launched.
+   */
+  private SelectionPolicy mLaunchSelectionPolicy;
+
   // launch conditions
   private boolean mIsLoaderTaskFinished = false;
   private boolean mIsEmergencyLaunch = false;
@@ -220,6 +226,12 @@ public class UpdatesController {
     return mIsEmergencyLaunch;
   }
 
+  // internal setters
+
+  /* package */ void setLaunchSelectionPolicy(SelectionPolicy selectionPolicy) {
+    mLaunchSelectionPolicy = selectionPolicy;
+  }
+
   /**
    * Starts the update process to launch a previously-loaded update and (if configured to do so)
    * check for a new update from the server. This method should be called as early as possible in
@@ -235,6 +247,7 @@ public class UpdatesController {
       mIsEmergencyLaunch = true;
     }
 
+    // TODO: mLaunchSelectionPolicy
     new LoaderTask(mUpdatesConfiguration, mDatabaseHolder, mUpdatesDirectory, mFileDownloader, mSelectionPolicy, new LoaderTask.LoaderTaskCallback() {
       @Override
       public void onFailure(Exception e) {
@@ -303,7 +316,7 @@ public class UpdatesController {
     final String oldLaunchAssetFile = mLauncher.getLaunchAssetFile();
 
     UpdatesDatabase database = getDatabase();
-    final DatabaseLauncher newLauncher = new DatabaseLauncher(mUpdatesConfiguration, mUpdatesDirectory, mFileDownloader, mSelectionPolicy);
+    final DatabaseLauncher newLauncher = new DatabaseLauncher(mUpdatesConfiguration, mUpdatesDirectory, mFileDownloader, mLaunchSelectionPolicy);
     newLauncher.launch(database, context, new Launcher.LauncherCallback() {
       @Override
       public void onFailure(Exception e) {
