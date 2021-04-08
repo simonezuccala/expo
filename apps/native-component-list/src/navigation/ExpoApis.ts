@@ -37,6 +37,7 @@ const Device = optionalRequire(() => require('../screens/DeviceScreen'));
 const DocumentPicker = optionalRequire(() => require('../screens/DocumentPickerScreen'));
 const Errors = optionalRequire(() => require('../screens/ErrorScreen'));
 const Events = optionalRequire(() => require('../screens/EventsScreen'));
+const FacebookAppEvents = optionalRequire(() => require('../screens/FacebookAppEventsScreen'));
 const FacebookLogin = optionalRequire(() => require('../screens/FacebookLoginScreen'));
 const FaceDetector = optionalRequire(() => require('../screens/FaceDetectorScreen'));
 const FileSystem = optionalRequire(() => require('../screens/FileSystemScreen'));
@@ -106,6 +107,7 @@ const optionalScreens: {
   Device,
   DocumentPicker,
   Localization,
+  FacebookAppEvents,
   FacebookLogin,
   FaceDetector,
   FileSystem,
