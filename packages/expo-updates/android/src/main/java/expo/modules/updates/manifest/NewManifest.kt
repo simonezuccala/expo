@@ -11,13 +11,15 @@ import expo.modules.updates.UpdatesUtils
 import expo.modules.updates.db.entity.AssetEntity
 import expo.modules.updates.db.entity.UpdateEntity
 import expo.modules.updates.loader.EmbeddedLoader
+import expo.modules.updates.manifest.raw.NewRawManifest
+import expo.modules.updates.manifest.raw.RawManifest
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.ParseException
 import java.util.*
 
-class NewManifest private constructor(override val rawManifestJson: JSONObject,
+class NewManifest private constructor(override val rawManifestJson: NewRawManifest,
                                       private val mId: UUID,
                                       private val mScopeKey: String,
                                       private val mCommitTime: Date,
@@ -78,24 +80,24 @@ class NewManifest private constructor(override val rawManifestJson: JSONObject,
         private val TAG = Manifest::class.java.simpleName
 
         @Throws(JSONException::class)
-        fun fromManifestJson(rootManifestJson: JSONObject, httpResponse: ManifestResponse?, configuration: UpdatesConfiguration): NewManifest {
-            var manifestJson = rootManifestJson
-            if (manifestJson.has("manifest")) {
-                manifestJson = manifestJson.getJSONObject("manifest")
+        fun fromRawManifest(rawManifest: NewRawManifest, httpResponse: ManifestResponse?, configuration: UpdatesConfiguration): NewManifest {
+            var actualRawManifest = rawManifest
+            if (actualRawManifest.has("manifest")) {
+                actualRawManifest = actualRawManifest.getJSONObject("manifest") as NewRawManifest
             }
-            val id = UUID.fromString(manifestJson.getString("id"))
-            val runtimeVersion = manifestJson.getString("runtimeVersion")
-            val launchAsset = manifestJson.getJSONObject("launchAsset")
-            val assets = manifestJson.optJSONArray("assets")
+            val id = UUID.fromString(actualRawManifest.getID())
+            val runtimeVersion = actualRawManifest.getRuntimeVersion()
+            val launchAsset = actualRawManifest.getLaunchAsset()
+            val assets = actualRawManifest.getAssets()
             val commitTime: Date = try {
-                UpdatesUtils.parseDateString(manifestJson.getString("createdAt"))
+                UpdatesUtils.parseDateString(actualRawManifest.getCreatedAt())
             } catch (e: ParseException) {
                 Log.e(TAG, "Could not parse manifest createdAt string; falling back to current time", e)
                 Date()
             }
             val serverDefinedHeaders = httpResponse?.header("expo-server-defined-headers")
             val manifestFilters = httpResponse?.header("expo-manifest-filters")
-            return NewManifest(manifestJson, id, configuration.scopeKey, commitTime, runtimeVersion, launchAsset, assets, serverDefinedHeaders, manifestFilters)
+            return NewManifest(actualRawManifest, id, configuration.scopeKey, commitTime, runtimeVersion, launchAsset, assets, serverDefinedHeaders, manifestFilters)
         }
 
         internal fun headerDictionaryToJSONObject(headerDictionary: String?): JSONObject? {
