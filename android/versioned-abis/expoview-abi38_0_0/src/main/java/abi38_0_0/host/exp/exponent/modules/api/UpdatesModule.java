@@ -23,6 +23,8 @@ import expo.modules.updates.db.entity.UpdateEntity;
 import expo.modules.updates.loader.FileDownloader;
 import expo.modules.updates.loader.RemoteLoader;
 import expo.modules.updates.manifest.Manifest;
+import expo.modules.updates.manifest.ManifestFactory;
+import expo.modules.updates.manifest.raw.RawManifest;
 import host.exp.exponent.AppLoader;
 import host.exp.exponent.Constants;
 import host.exp.exponent.ExpoUpdatesAppLoader;
@@ -37,7 +39,7 @@ public class UpdatesModule extends ReactContextBaseJavaModule {
 
   private static final String TAG = UpdatesModule.class.getSimpleName();
   private Map<String, Object> mExperienceProperties;
-  private JSONObject mManifest;
+  private RawManifest mManifest;
 
   @Inject
   DatabaseHolder mDatabaseHolder;
@@ -45,7 +47,7 @@ public class UpdatesModule extends ReactContextBaseJavaModule {
   @Inject
   ExponentSharedPreferences mExponentSharedPreferences;
 
-  public UpdatesModule(ReactApplicationContext reactContext, Map<String, Object> experienceProperties, JSONObject manifest) {
+  public UpdatesModule(ReactApplicationContext reactContext, Map<String, Object> experienceProperties, RawManifest manifest) {
     super(reactContext);
     NativeModuleDepsProvider.getInstance().inject(UpdatesModule.class, this);
     mExperienceProperties = experienceProperties;
@@ -73,7 +75,7 @@ public class UpdatesModule extends ReactContextBaseJavaModule {
       promise.reject("E_CHECK_UPDATE_FAILED", "Remote updates are disabled in app.json");
       return;
     }
-    if (ExponentManifest.isDebugModeEnabled(mManifest)) {
+    if (mManifest.isDevelopmentMode()) {
       promise.reject("E_CHECK_UPDATE_FAILED", "Cannot check for updates in dev mode");
       return;
     }
@@ -114,7 +116,7 @@ public class UpdatesModule extends ReactContextBaseJavaModule {
       sendErrorAndReject("E_FETCH_UPDATE_FAILED", "Remote updates are disabled in app.json", promise);
       return;
     }
-    if (ExponentManifest.isDebugModeEnabled(mManifest)) {
+    if (mManifest.isDevelopmentMode()) {
       sendErrorAndReject("E_FETCH_UPDATE_FAILED", "Cannot fetch updates in dev mode", promise);
       return;
     }
@@ -155,7 +157,7 @@ public class UpdatesModule extends ReactContextBaseJavaModule {
                 sendEventToJS(AppLoader.UPDATE_DOWNLOAD_FINISHED_EVENT, params);
                 promise.resolve(manifestString);
 
-                mExponentSharedPreferences.updateSafeManifest((String) mExperienceProperties.get(KernelConstants.MANIFEST_URL_KEY), update.metadata);
+                mExponentSharedPreferences.updateSafeManifest((String) mExperienceProperties.get(KernelConstants.MANIFEST_URL_KEY), update.getRawManifest());
               }
             }
           }

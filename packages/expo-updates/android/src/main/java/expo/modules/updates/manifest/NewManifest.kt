@@ -40,7 +40,7 @@ class NewManifest private constructor(override val rawManifestJson: NewRawManife
 
     override val updateEntity: UpdateEntity
         get() = UpdateEntity(mId, mCommitTime, mRuntimeVersion, mScopeKey).apply {
-            metadata = rawManifestJson
+            metadata = rawManifestJson.getRawJson()
         }
 
     override val assetEntityList: List<AssetEntity>
@@ -82,8 +82,8 @@ class NewManifest private constructor(override val rawManifestJson: NewRawManife
         @Throws(JSONException::class)
         fun fromRawManifest(rawManifest: NewRawManifest, httpResponse: ManifestResponse?, configuration: UpdatesConfiguration): NewManifest {
             var actualRawManifest = rawManifest
-            if (actualRawManifest.has("manifest")) {
-                actualRawManifest = actualRawManifest.getJSONObject("manifest") as NewRawManifest
+            if (actualRawManifest.getRawJson().has("manifest")) {
+                actualRawManifest = NewRawManifest(actualRawManifest.getRawJson().getJSONObject("manifest"))
             }
             val id = UUID.fromString(actualRawManifest.getID())
             val runtimeVersion = actualRawManifest.getRuntimeVersion()

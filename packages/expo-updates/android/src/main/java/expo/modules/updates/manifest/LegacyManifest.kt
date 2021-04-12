@@ -9,7 +9,6 @@ import expo.modules.updates.db.entity.UpdateEntity
 import expo.modules.updates.db.enums.UpdateStatus
 import expo.modules.updates.loader.EmbeddedLoader
 import expo.modules.updates.manifest.raw.LegacyRawManifest
-import expo.modules.updates.manifest.raw.RawManifest
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -33,7 +32,7 @@ class LegacyManifest private constructor(override val rawManifestJson: LegacyRaw
 
     override val updateEntity: UpdateEntity
         get() = UpdateEntity(mId, mCommitTime, mRuntimeVersion, mScopeKey).apply {
-            metadata = rawManifestJson
+            metadata = rawManifestJson.getRawJson()
             if (isDevelopmentMode) {
                 status = UpdateStatus.DEVELOPMENT
             }
@@ -100,7 +99,7 @@ class LegacyManifest private constructor(override val rawManifestJson: LegacyRaw
                     Date()
                 }
             }
-            var runtimeVersion = rawManifest.getSDKVersion()
+            var runtimeVersion = rawManifest.getSDKVersionNullable()
             val runtimeVersionObject = rawManifest.getRuntimeVersion()
             if (runtimeVersionObject != null) {
                 if (runtimeVersionObject is String) {
@@ -114,7 +113,7 @@ class LegacyManifest private constructor(override val rawManifestJson: LegacyRaw
             return LegacyManifest(rawManifest, configuration.updateUrl, id, configuration.scopeKey, commitTime, runtimeVersion, bundleUrl, bundledAssets)
         }
 
-        internal fun getAssetsUrlBase(manifestUrl: Uri, manifestJson: JSONObject): Uri {
+        internal fun getAssetsUrlBase(manifestUrl: Uri, rawManifest: LegacyRawManifest): Uri {
             val hostname = manifestUrl.host
             return if (hostname == null) {
                 Uri.parse(EXPO_ASSETS_URL_BASE)
@@ -128,7 +127,7 @@ class LegacyManifest private constructor(override val rawManifestJson: LegacyRaw
                 // assetUrlOverride may be an absolute or relative URL
                 // if relative, we should resolve with respect to the manifest URL
                 // java.net.URI's resolve method does this for us
-                val assetsPathOrUrl = manifestJson.optString("assetUrlOverride", "assets")
+                val assetsPathOrUrl = rawManifest.getAssetUrlOverride() ?: "assets"
                 try {
                     val assetsURI = URI(assetsPathOrUrl)
                     val manifestURI = URI(manifestUrl.toString())
