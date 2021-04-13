@@ -6,6 +6,8 @@
 
 ### 🎉 New features
 
+- Added permissions. ([#12501](https://github.com/expo/expo/pull/12501) by [@EvanBacon](https://github.com/EvanBacon))
+
 ### 🐛 Bug fixes
 
 ## 10.1.1 — 2021-04-01
